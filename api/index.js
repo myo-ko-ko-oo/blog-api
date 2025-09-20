@@ -1,4 +1,4 @@
-import { app } from "../dist/index.js";
+import { app } from "../dist/app";
 import serverless from "serverless-http";
 
 export default serverless(app);
