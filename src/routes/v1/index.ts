@@ -14,10 +14,10 @@ router.get("/", (req: Request, res: Response) => {
         hello</p>`
   );
 });
-router.use("/api/v1", authRoutes);
-router.use("/api/v1/user", userRoutes);
+router.use("/v1", authRoutes);
+router.use("/v1/user", userRoutes);
 router.use(
-  "/api/v1/admin",
+  "/v1/admin",
   //   auth, authorise(true, "ADMIN"),
   adminRoutes
 );
