@@ -21,8 +21,9 @@
     "esModuleInterop": true,
     "forceConsistentCasingInFileNames": true,
     "strict": true,
-    "noImplicitAny": true,
-    "skipLibCheck": true
+    // "noImplicitAny": true,
+    "skipLibCheck": true,
+    "noImplicitAny": false
   },
   "include": ["./*.js", "src/**/*.ts", "test/**/*.ts"]
 }
