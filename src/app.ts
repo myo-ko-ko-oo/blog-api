@@ -49,5 +49,4 @@ app.use(limiter);
 app.use(router);
 app.use(serverError);
 
-// ✅ Default export
 export default app;
