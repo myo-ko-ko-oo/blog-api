@@ -10,6 +10,7 @@ export const getCategories = async () => {
       orderBy: { name: "asc" },
     });
   } catch (error) {
+    console.error("Get categories error:", error);
     throw createError("Could not get categories.", 404, errorCode.invalid);
   }
 };
