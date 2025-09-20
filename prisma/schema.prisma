@@ -1,0 +1,95 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client-js"
+  output   = "../generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+
+enum Role {
+  USER
+  AUTHOR
+  ADMIN
+}
+
+model User {
+  id        Int      @id @default(autoincrement())
+  email     String   @unique
+  name      String
+  phone     String?
+  password  String   //  hashed password
+  role      Role     @default(USER)
+  posts     Post[]
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+
+model Post {
+  id          Int             @id @default(autoincrement())
+  title       String
+  slug        String          @unique // SEO-friendly URL slug
+  author      User            @relation(fields: [authorId], references: [id])
+  authorId    Int
+  sections    PostSection[]
+  categories  PostCategory[]  // many-to-many with categories
+  tags        PostTag[]       // many-to-many with tags
+  createdAt   DateTime        @default(now())
+  updatedAt   DateTime        @updatedAt
+}
+
+model PostSection {
+  id       Int    @id @default(autoincrement())
+  post     Post   @relation(fields: [postId], references: [id], onDelete: Cascade)
+  postId   Int
+  content  String?
+  imageUrl String?
+  order    Int
+}
+
+model Category {
+  id    Int            @id @default(autoincrement())
+  name  String         @unique
+  slug  String         @unique //SEO slug for categories
+  posts PostCategory[]
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime    @updatedAt @default(now())
+}
+
+model PostCategory {
+  postId     Int
+  categoryId Int
+  post     Post     @relation(fields: [postId], references: [id])
+  category Category @relation(fields: [categoryId], references: [id])
+
+  @@id([postId, categoryId])
+}
+
+model Tag {
+  id    Int      @id @default(autoincrement())
+  name  String   @unique
+  slug  String   @unique // SEO slug for tags
+  posts PostTag[]
+  createdAt   DateTime        @default(now())
+  updatedAt DateTime @updatedAt @default(now())
+}
+
+model PostTag {
+  postId Int
+  tagId  Int
+
+  post Post @relation(fields: [postId], references: [id])
+  tag  Tag  @relation(fields: [tagId], references: [id])
+
+  @@id([postId, tagId])
+}
+
