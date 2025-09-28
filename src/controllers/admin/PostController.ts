@@ -2,11 +2,8 @@ import { Request, Response, NextFunction } from "express";
 import { body, validationResult } from "express-validator";
 import sanitizeHtml from "sanitize-html";
 import { errorCode } from "../../config/errorCode";
-// import { optimizeAndSaveImage } from "../../Utilities/imageOptimize";
 import { createError } from "../../utilities/error";
 import slugify from "slugify";
-import path from "path";
-import { unlink } from "node:fs/promises";
 import { optimizeAndSaveImage } from "../../middleware/uploadFile";
 import {
   createNewPost,

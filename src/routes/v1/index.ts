@@ -10,8 +10,11 @@ import userRoutes from "./users";
 const router = express.Router();
 router.get("/", (req: Request, res: Response) => {
   res.status(200).send(
-    `<h1> Server Coming Soon </h1></br><h3>server is running.....</h3></br><p> 
-        hello</p>`
+    `<h1> Server Coming Soon </h1>
+    </br>
+    <h3>server is running.....</h3>
+    </br>
+    <p>hello</p>`
   );
 });
 router.use("/v1", authRoutes);

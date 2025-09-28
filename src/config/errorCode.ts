@@ -7,7 +7,7 @@ export const errorCode = {
   overLimit: "Error_OverLimit",
   otpExpired: "Error_OtpExpired",
   requestExpired: "Error_RequestExpired",
-  accountBanned: "Error_AccountBanned",
+  accountFreeze: "Error_AccountFreeze",
   unauthorised: "Error_Unauthorised",
   maintenance: "Error_Maintenance",
   twodOrderFail: "Error_TwodOrder_Create_Failed",

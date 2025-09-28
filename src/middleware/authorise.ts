@@ -14,7 +14,6 @@ interface CustomRequest extends Request {
 export const authorise = (permission: boolean, ...roles: string[]) => {
   return async (req: CustomRequest, res: Response, next: NextFunction) => {
     const userId = req.userId;
-    const email = req.email;
 
     const user = await getUserById(userId!);
 

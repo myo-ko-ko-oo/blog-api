@@ -21,12 +21,23 @@ enum Role {
   AUTHOR
   ADMIN
 }
+ enum Status {
+   ACTIVE
+   INACTIVE
+   FREEZE
+   }
 
 model User {
   id        Int      @id @default(autoincrement())
-  email     String   @unique
-  name      String
+  email     String    @unique @db.VarChar(52)
+  name      String    @db.VarChar(52)
+  authorName String?    @db.VarChar(52)
   phone     String?
+  status   Status   @default(ACTIVE)
+  imageUrl  String?
+  errorLoginCount Int @default(0) @db.SmallInt
+  lastLogin         DateTime?
+  acessToken         String?
   password  String   //  hashed password
   role      Role     @default(USER)
   posts     Post[]
@@ -34,6 +45,22 @@ model User {
   updatedAt DateTime @updatedAt
 }
 
+enum Type {
+  MM
+  ENG
+  }
+
+  model Otp {
+  id            Int      @id @default(autoincrement())
+  email         String   @unique @db.VarChar(52)
+  otp           String
+  rememberToken String
+  verifyToken   String?
+  count         Int      @default(0) @db.SmallInt
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+  error         Int      @default(0) @db.SmallInt
+}
 
 model Post {
   id          Int             @id @default(autoincrement())
@@ -41,6 +68,7 @@ model Post {
   slug        String          @unique // SEO-friendly URL slug
   author      User            @relation(fields: [authorId], references: [id])
   authorId    Int
+  type        Type           @default(ENG)
   sections    PostSection[]
   categories  PostCategory[]  // many-to-many with categories
   tags        PostTag[]       // many-to-many with tags
@@ -60,7 +88,7 @@ model PostSection {
 model Category {
   id    Int            @id @default(autoincrement())
   name  String         @unique
-  slug  String         @unique //SEO slug for categories
+  type        Type     @default(ENG)
   posts PostCategory[]
   createdAt   DateTime    @default(now())
   updatedAt   DateTime    @updatedAt @default(now())
@@ -94,3 +122,34 @@ model PostTag {
   @@id([postId, tagId])
 }
 
+model Config {
+  id    Int      @id @default(autoincrement())
+  homeTitle  String    @db.VarChar(52)
+  homeDescription String
+  aboutTitle  String    @db.VarChar(52)
+  aboutDescription String
+  contactEmail  String    @db.VarChar(52)
+  contactPhone String  @db.VarChar(15)
+  contactAddress String @db.VarChar(52)
+  
+}
+model Contact {
+  id    Int    @id @default(autoincrement())
+  name      String  @db.VarChar(52)
+  email     String  @db.VarChar(52)
+  message   String 
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+}
+model Subscribe {
+  id    Int    @id @default(autoincrement()) 
+  email     String  @unique @db.VarChar(52)
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+}
+
+model Setting {
+  id    Int    @id @default(autoincrement())
+  key   String @unique @db.VarChar(50)
+  value String @db.VarChar(200)
+}

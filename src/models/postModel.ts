@@ -2,6 +2,12 @@ import { PrismaClient } from "../../generated/prisma";
 import { errorCode } from "../config/errorCode";
 import { createError } from "../utilities/error";
 import { removeFiles } from "../utilities/removeFiles";
+
+interface GetPostsOptions {
+  page: number;
+  limit: number;
+}
+
 const prisma = new PrismaClient();
 
 export const createNewPost = async (data: any, savedPaths: string[]) => {
@@ -185,4 +191,70 @@ export const getPostDetailByPostId = async (postId: number) => {
       },
     },
   });
+};
+
+export const getPostsList = async ({ page, limit }: GetPostsOptions) => {
+  const skip = (page - 1) * limit;
+
+  const posts = await prisma.post.findMany({
+    skip,
+    take: limit + 1, // fetch one extra to detect next page
+    select: {
+      id: true,
+      title: true,
+      updatedAt: true,
+      sections: {
+        select: {
+          id: true,
+          content: true,
+          imageUrl: true,
+          order: true,
+        },
+      },
+      categories: {
+        select: {
+          category: {
+            select: {
+              id: true,
+              name: true,
+            },
+          },
+        },
+      },
+      tags: {
+        select: {
+          tag: {
+            select: {
+              id: true,
+              name: true,
+              slug: true,
+            },
+          },
+        },
+      },
+      author: {
+        select: {
+          name: true,
+        },
+      },
+    },
+    orderBy: {
+      updatedAt: "desc",
+    },
+  });
+
+  // detect next page
+  const hasNextPage = posts.length > limit;
+  if (hasNextPage) posts.pop();
+
+  // count for total pages
+  const totalCount = await prisma.post.count();
+  const totalPages = Math.ceil(totalCount / limit);
+
+  return {
+    posts,
+    hasNextPage,
+    totalCount,
+    totalPages,
+  };
 };

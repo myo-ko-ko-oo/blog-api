@@ -1,9 +1,17 @@
 import express from "express";
 import {
+  authCheck,
+  changePassword,
+  changeVerifyOtpPassword,
+  forgetPassword,
   login,
   logout,
   register,
+  resetPassword,
+  setNewPassword,
+  verifyOtpForPassword,
 } from "../../../controllers/auth/authController";
+import { auth } from "../../../middleware/auth";
 
 // import { auth } from "../../middlewares/auth";
 
@@ -15,10 +23,14 @@ router.post("/register", register);
 router.post("/login", login);
 router.post("/logout", logout);
 
-// router.post("/forget-password", forgetPassword);
-// router.post("/verify", verifyOtpForPassword);
-// router.post("/reset-password", resetPassword);
+router.post("/forget-password", forgetPassword);
+router.post("/verify", verifyOtpForPassword);
+router.post("/reset-password", resetPassword);
 
-// router.get("/auth-check", auth, authCheck);
+router.post("/change-password", auth, changePassword);
+router.post("/otp-verify", auth, changeVerifyOtpPassword);
+router.post("/new-set-password", setNewPassword);
+
+router.get("/auth-check", auth, authCheck);
 
 export default router;
