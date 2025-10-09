@@ -13,7 +13,7 @@ interface CustomRequest extends Request {
 
 export const createCategory = [
   body("name", "Category Name is required.").trim().notEmpty().escape(),
-  body("slug", "Slug is required.").trim().notEmpty().escape(),
+  // body("slug", "Slug is required.").trim().notEmpty().escape(),
 
   async (req: CustomRequest, res: Response, next: NextFunction) => {
     const errors = validationResult(req).array({ onlyFirstError: true });
@@ -23,10 +23,9 @@ export const createCategory = [
       error.code = errorCode.invalid;
       return next(error);
     }
-    const { name, slug } = req.body;
+    const { name } = req.body;
     const catgoryData = {
       name,
-      slug,
     };
     await createNewCategory(catgoryData);
 
@@ -37,7 +36,7 @@ export const createCategory = [
 export const updateCategory = [
   body("categoryId", "Invalid Post Id").isInt({ min: 1 }),
   body("name", "Category Name is required.").trim().notEmpty().escape(),
-  body("slug", "Slug is required.").trim().notEmpty().escape(),
+  // body("slug", "Slug is required.").trim().notEmpty().escape(),
 
   async (req: CustomRequest, res: Response, next: NextFunction) => {
     const errors = validationResult(req).array({ onlyFirstError: true });
@@ -48,10 +47,9 @@ export const updateCategory = [
       error.code = errorCode.invalid;
       return next(error);
     }
-    const { categoryId, name, slug } = req.body;
+    const { categoryId, name } = req.body;
     const updateData = {
       name,
-      slug,
     };
     await updateCategoryById(categoryId, updateData);
 

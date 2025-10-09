@@ -1,8 +1,7 @@
 import { Request } from "express";
 import multer, { FileFilterCallback } from "multer";
-import sharp from "sharp";
-import fs from "fs";
-import path from "path";
+// import fs from "fs";
+// import path from "path";
 import { createError } from "../utilities/error";
 import { errorCode } from "../config/errorCode";
 
@@ -31,28 +30,27 @@ export const uploadMemory = multer({
 });
 
 // Optimize and save
-export const optimizeAndSaveImage = async (
-  postImages: Express.Multer.File[]
-) => {
-  const uploadDir = path.join(__dirname, "../../upload/images");
-  if (!fs.existsSync(uploadDir)) {
-    fs.mkdirSync(uploadDir, { recursive: true });
-  }
+// export const optimizeAndSaveImage = async (
+//   postImages: Express.Multer.File[]
+// ) => {
+//   const uploadDir = path.join(__dirname, "../../upload/images");
+//   if (!fs.existsSync(uploadDir)) {
+//     fs.mkdirSync(uploadDir, { recursive: true });
+//   }
 
-  const savedFiles: string[] = [];
+//   const savedFiles: string[] = [];
 
-  for (const image of postImages) {
-    const ext = "webp";
-    const filename = `${Date.now()}-${Math.round(Math.random() * 1e9)}.${ext}`;
-    const filePath = path.join(uploadDir, filename);
+//   for (const image of postImages) {
+//     const ext = "webp";
+//     const filename = `${Date.now()}-${Math.round(Math.random() * 1e9)}.${ext}`;
+//     const filePath = path.join(uploadDir, filename);
 
-    await sharp(image.buffer)
-      .resize({ width: 1200 })
-      .webp({ quality: 80 })
-      .toFile(filePath);
+//     await sharp(image.buffer)
+//       .resize({ width: 1200 })
+//       .webp({ quality: 80 })
+//       .toFile(filePath);
 
-    savedFiles.push(filename);
-  }
+//     savedFiles.push(filename);
+//   }
 
-  return savedFiles;
-};
+//   return savedFiles;

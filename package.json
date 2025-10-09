@@ -13,6 +13,7 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
+    "@aws-sdk/client-s3": "^3.899.0",
     "@prisma/client": "^6.16.2",
     "@types/cookie-parser": "^1.4.9",
     "@types/sanitize-html": "^2.16.0",

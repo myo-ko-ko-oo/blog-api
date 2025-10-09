@@ -1,3 +1,4 @@
+import moment from "moment";
 import { PrismaClient } from "../../generated/prisma";
 import { errorCode } from "../config/errorCode";
 import { createError } from "../utilities/error";
@@ -5,12 +6,16 @@ import { createError } from "../utilities/error";
 const prisma = new PrismaClient();
 export const getUserLists = async () => {
   try {
-    return await prisma.user.findMany({
+    const users = await prisma.user.findMany({
       omit: {
         password: true,
       },
       orderBy: { createdAt: "asc" },
     });
+    return users.map((user) => ({
+      ...user,
+      updatedAt: moment(user.updatedAt).format("DD-MMM-YYYY").toLowerCase(),
+    }));
   } catch (error) {
     console.error("Get user error:", error);
     throw createError("Could not get user lists.", 404, errorCode.invalid);

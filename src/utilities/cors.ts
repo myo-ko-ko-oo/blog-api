@@ -1,7 +1,8 @@
 const whitelist = [
-  "http://172.20.10.3:3000",
+  "http://127.20.10.3:3000",
   "http://localhost:3000",
   "http://192.168.100.62:3000",
+  "https://diabetes-blog-demo.vercel.app",
 ];
 export const corsOptions = {
   origin: function (
@@ -16,5 +17,5 @@ export const corsOptions = {
       callback(new Error("Not allowed by CORS"));
     }
   },
-  credentials: true, // Allow cookies or authorization header
+  credentials: true,
 };

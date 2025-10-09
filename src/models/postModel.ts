@@ -1,7 +1,7 @@
+import moment from "moment";
 import { PrismaClient } from "../../generated/prisma";
 import { errorCode } from "../config/errorCode";
 import { createError } from "../utilities/error";
-import { removeFiles } from "../utilities/removeFiles";
 
 interface GetPostsOptions {
   page: number;
@@ -9,11 +9,19 @@ interface GetPostsOptions {
 }
 
 const prisma = new PrismaClient();
-
-export const createNewPost = async (data: any, savedPaths: string[]) => {
+// --- Create Post ---
+export const createNewPost = async (
+  data: any,
+  uploadedCoverFile: { url: string; key: string },
+  uploadedSectionFiles: { url: string; key: string }[]
+) => {
   const postData: any = {
     title: data.title,
     slug: data.slug,
+    type: data.type,
+    mainContent: data.mainContent,
+    coverUrl: uploadedCoverFile.url,
+    coverKey: uploadedCoverFile.key,
     author: {
       connect: { id: data.authorId },
     },
@@ -23,8 +31,19 @@ export const createNewPost = async (data: any, savedPaths: string[]) => {
     postData.sections = {
       create: data.sections.map((section: any, index: number) => ({
         content: section.content,
-        imageUrl: savedPaths[index],
+        imageUrl: uploadedSectionFiles[index].url,
+        imageKey: uploadedSectionFiles[index].key,
         order: index + 1,
+      })),
+    };
+  }
+
+  if (data.categories && data.categories.length > 0) {
+    postData.categories = {
+      create: data.categories.map((id: string) => ({
+        category: {
+          connect: { id: Number(id) },
+        },
       })),
     };
   }
@@ -40,16 +59,6 @@ export const createNewPost = async (data: any, savedPaths: string[]) => {
               slug: tagName.toLowerCase().replace(/\s+/g, "-"),
             },
           },
-        },
-      })),
-    };
-  }
-
-  if (data.categories && data.categories.length > 0) {
-    postData.categories = {
-      create: data.categories.map((id: string) => ({
-        category: {
-          connect: { id: Number(id) },
         },
       })),
     };
@@ -66,122 +75,103 @@ export const createNewPost = async (data: any, savedPaths: string[]) => {
 };
 
 export const getPostByPostId = async (postId: number) => {
-  return prisma.post.findUnique({
-    where: { id: postId },
-  });
+  try {
+    return await prisma.post.findUnique({
+      where: { id: postId },
+      include: { sections: true, categories: true, tags: true },
+    });
+  } catch (error) {
+    console.error("Get post error:", error);
+    throw createError("Could not found post.", 400, errorCode.invalid);
+  }
 };
 
-export const updatePostByPostId = async (
+// --- Update Post ---
+export const getSectionByPostId = async (id: number) => {
+  return prisma.postSection.findUnique({
+    where: { id },
+  });
+};
+export const updateImageUrlAndKey = async (sectionId: number, data: any) => {
+  return prisma.postSection.update({
+    where: { id: sectionId },
+    data,
+  });
+};
+export const updatePostModel = async (
   postId: number,
-  data: any,
-  savedPaths: string[]
+  data: {
+    title: string;
+    type: string;
+    slug: string;
+    mainContent: string;
+    categories: number[];
+    tags: any[];
+  },
+  sections: any[],
+  uploadedFiles: { url: string; key: string }[],
+  cover?: { url: string; key: string }
 ) => {
-  const postData: any = {
-    title: data.title,
-    slug: data.slug,
-    author: {
-      connect: { id: data.authorId },
-    },
-  };
+  // --- Update or create sections ---
+  for (let i = 0; i < sections.length; i++) {
+    const sec = sections[i];
 
-  // --- Sections ---
-  if (data.sections && data.sections.length > 0) {
-    // get old imageUrls
-    const oldSections = await prisma.postSection.findMany({
-      where: { postId },
-      select: { imageUrl: true },
-    });
+    const imageData = uploadedFiles[i]
+      ? { imageUrl: uploadedFiles[i].url, imageKey: uploadedFiles[i].key }
+      : {};
 
-    const oldImageFiles = oldSections
-      .map((s) => s.imageUrl)
-      .filter((url): url is string => !!url);
-
-    // delete old sections
-    await prisma.postSection.deleteMany({ where: { postId } });
-
-    // delete old files from disk
-    await removeFiles(oldImageFiles);
-
-    //create new sections
-    postData.sections = {
-      create: data.sections.map((section: any, index: number) => ({
-        content: section.content,
-        imageUrl: section.imageUrl || savedPaths[index] || null,
-        order: index + 1,
-      })),
-    };
-  }
-
-  // --- Tags ---
-  if (data.tags && data.tags.length > 0) {
-    await prisma.postTag.deleteMany({ where: { postId } });
-    postData.tags = {
-      create: data.tags.map((tagName: string) => ({
-        tag: {
-          connectOrCreate: {
-            where: { name: tagName },
-            create: {
-              name: tagName,
-              slug: tagName.toLowerCase().replace(/\s+/g, "-"),
-            },
-          },
+    if (sec.id) {
+      await prisma.postSection.update({
+        where: { id: sec.id },
+        data: {
+          content: sec.content || null,
+          order: i + 1,
+          ...imageData,
         },
-      })),
-    };
-  }
-
-  // --- Categories ---
-  if (data.categories && data.categories.length > 0) {
-    await prisma.postCategory.deleteMany({ where: { postId } });
-    postData.categories = {
-      create: data.categories.map((id: string) => ({
-        category: {
-          connect: { id: Number(id) },
+      });
+    } else {
+      await prisma.postSection.create({
+        data: {
+          postId,
+          content: sec.content || null,
+          order: i + 1,
+          ...imageData,
         },
-      })),
-    };
+      });
+    }
   }
 
+  // --- Update main post ---
   return prisma.post.update({
     where: { id: postId },
-    data: postData,
+    data: {
+      title: data.title,
+      slug: data.slug,
+      type: data.type as any,
+      mainContent: data.mainContent,
+      ...(cover && { coverUrl: cover.url, coverKey: cover.key }),
+      categories: {
+        deleteMany: {},
+        create: data.categories.map((catId) => ({ categoryId: catId })),
+      },
+      tags: {
+        deleteMany: {},
+        create: data.tags.map((tag) => ({ tagId: tag.id || tag })),
+      },
+    },
     include: {
       sections: true,
-      tags: true,
-      categories: true,
+      categories: { include: { category: true } },
+      tags: { include: { tag: true } },
     },
   });
-};
-
-export const deletePostByPostId = async (postId: number) => {
-  const postExists = await prisma.post.findUnique({ where: { id: postId } });
-  if (!postExists) throw new Error("Post not found");
-
-  const oldSections = await prisma.postSection.findMany({
-    where: { postId },
-    select: { imageUrl: true },
-  });
-
-  const oldImageFiles = oldSections
-    .map((s) => s.imageUrl)
-    .filter((url): url is string => !!url);
-
-  await removeFiles(oldImageFiles);
-
-  await prisma.$transaction([
-    prisma.postTag.deleteMany({ where: { postId } }),
-    prisma.postCategory.deleteMany({ where: { postId } }),
-    prisma.post.delete({ where: { id: postId } }),
-  ]);
-
-  return true;
 };
 
 export const getPostDetailByPostId = async (postId: number) => {
   return prisma.post.findUnique({
     where: { id: postId },
     include: {
-      author: { select: { name: true } },
+      author: { select: { name: true, authorName: true } },
       sections: true,
       tags: {
         include: { tag: { select: { name: true } } },
@@ -257,4 +247,69 @@ export const getPostsList = async ({ page, limit }: GetPostsOptions) => {
     totalCount,
     totalPages,
   };
+};
+
+export const getPostsListByOptions = async (options: any) => {
+  const posts = await prisma.post.findMany(options);
+
+  return posts.map((post) => ({
+    ...post,
+    updatedAt: moment(post.updatedAt).format("DD-MMM-YYYY").toLowerCase(),
+  }));
+};
+
+export const getKeysByPostId = async (postId: number) => {
+  try {
+    return await prisma.post.findUnique({
+      where: { id: postId },
+      select: {
+        coverKey: true,
+        sections: {
+          select: {
+            imageKey: true,
+          },
+        },
+      },
+    });
+  } catch (error) {
+    console.error("Get post error:", error);
+    throw createError("Could not found post.", 400, errorCode.invalid);
+  }
+};
+
+export const deletePostByPostId = async (postId: number) => {
+  try {
+    return await prisma.post.delete({
+      where: { id: postId },
+    });
+    // to delete postTags and postCategory
+  } catch (error) {
+    console.error("Get post error:", error);
+    throw createError("Could not delete post.", 400, errorCode.invalid);
+  }
+};
+
+export const getRandomPostsModel = async (take: number) => {
+  const count = await prisma.post.count();
+  if (count === 0) return [];
+
+  const ids = await prisma.post.findMany({
+    select: { id: true },
+  });
+
+  const randomIds = ids
+    .map((p) => p.id)
+    .sort(() => 0.5 - Math.random())
+    .slice(0, take);
+
+  return prisma.post.findMany({
+    where: { id: { in: randomIds } },
+    select: {
+      id: true,
+      slug: true,
+      title: true,
+      mainContent: true,
+      coverUrl: true,
+    },
+  });
 };

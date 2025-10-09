@@ -69,6 +69,9 @@ model Post {
   author      User            @relation(fields: [authorId], references: [id])
   authorId    Int
   type        Type           @default(ENG)
+  coverUrl   String
+  coverKey   String
+  mainContent String
   sections    PostSection[]
   categories  PostCategory[]  // many-to-many with categories
   tags        PostTag[]       // many-to-many with tags
@@ -82,13 +85,14 @@ model PostSection {
   postId   Int
   content  String?
   imageUrl String?
+  imageKey  String? 
   order    Int
 }
 
 model Category {
   id    Int            @id @default(autoincrement())
   name  String         @unique
-  type        Type     @default(ENG)
+  type   Type     @default(ENG)
   posts PostCategory[]
   createdAt   DateTime    @default(now())
   updatedAt   DateTime    @updatedAt @default(now())
